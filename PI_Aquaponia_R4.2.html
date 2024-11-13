@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <title>Projeto Integrador - Automação Aquaponia</title>
+    <style>
+        html {
+            font-family: Arial;
+            display: inline-block;
+            margin: 0px auto;
+            text-align: center;
+        }
+
+        h1 { font-size: 2.0rem; color:#2980b9; }
+
+        .buttonON, .buttonOFF {
+            display: inline-block;
+            width: 250px;
+            padding: 5px 5px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 5px #999;
+        }
+        
+        .buttonON { background-color: #4CAF50; }
+        .buttonON:hover { background-color: #3e8e41; }
+        .buttonON:active { transform: translateY(4px); }
+
+        .buttonOFF { background-color: #e74c3c; }
+        .buttonOFF:hover { background-color: #c0392b; }
+        .buttonOFF:active { transform: translateY(4px); }
+
+        .text {
+            text-align: center;
+            font-size: 18px;
+            width: 200px;
+            height: 22px;
+            border: 3px solid #9b59b6;
+            border-radius: 5px;
+            padding: 3px;
+            transition: border 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+        }
+
+        .text:focus {
+            border: 3px solid #8e44ad;
+            box-shadow: 0 0 7px #8e44ad;
+            outline: none;
+        }
+
+        /* Estilo para o botão "Aplicar Filtro" */
+        .apply-button {
+            background-color: #C0C0C0; /* Prateado */
+            color: #2c3e50;
+            font-size: 18px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .apply-button:hover {
+            background-color: #A9A9A9; /* Prateado mais escuro ao passar o mouse */
+        }
+
+        /* Centralizar o gráfico */
+        #chart-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>PROJETO INTEGRADOR - UNIVESP</h1>
+        <br>
+        <p style="color:#2c3e50;font-weight: bold;font-size: 18px;">API Key : 
+            <input type="password" id="ts-api-key" class="text" placeholder="ThingSpeak API Key" />
+            <input type="checkbox" onclick="hideapikey()">Exibir API Key
+        </p>
+        <p style="color:#2c3e50;font-weight: bold;font-size: 18px;">Channel ID : 
+            <input type="password" id="ts-channel-id" class="text" placeholder="ThingSpeak Channel ID" />
+            <input type="checkbox" onclick="hidechannelid()">Exibir Channel ID
+        </p>
+        <br>
+
+        <button type="button" id="bomba-on" class="buttonON">Ligar Bomba</button>
+        <button type="button" id="bomba-off" class="buttonOFF">Desligar Bomba</button><br>
+        <br>
+
+        <button type="button" id="aqu-on" class="buttonON">Ligar Aquecedor</button>
+        <button type="button" id="aqu-off" class="buttonOFF">Desligar Aquecedor</button><br>
+        <br>
+
+        <!-- Filtro de Data -->
+        <div style="display: inline-block; text-align: center;">
+            <label style="font-size: 18px; color:#2c3e50;">Início:</label>
+            <input type="date" id="startDate" class="text">
+            <label style="font-size: 18px; color:#2c3e50;">Fim:</label>
+            <input type="date" id="endDate" class="text"><br>
+            <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
+        </div>
+        <br><br>
+
+        <!-- Gráfico de Temperatura -->
+        <h2 style="color:#2c3e50;font-weight: bold;font-size: 18px;">Temperatura:</h2>
+        <div id="chart-container">
+            <canvas id="temperatureChart" width="600" height="480"></canvas>
+        </div>
+    </div>
+
+    <script>
+        function hideapikey() {
+            var x = document.getElementById("ts-api-key");
+            x.type = x.type === "password" ? "text" : "password";
+        }
+
+        function hidechannelid() {
+            var x = document.getElementById("ts-channel-id");
+            x.type = x.type === "password" ? "text" : "password";
+        }
+
+        // Função para carregar e processar os dados de temperatura
+        async function loadTemperatureData() {
+            const response = await fetch('feeds.csv'); // Acessa o CSV na mesma pasta
+            const data = await response.text();
+            const rows = data.split('\n').slice(1);
+
+            const readings = rows.map(row => {
+                const [created_at, , , , field3] = row.split(',');
+                return {
+                    timestamp: new Date(created_at),
+                    hour: new Date(created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    temperature: parseFloat(field3)
+                };
+            }).filter(reading => !isNaN(reading.temperature));
+
+            return readings;
+        }
+
+        // Função para criar o gráfico
+        async function createChart(filteredReadings) {
+            const idealMin = 26;
+            const idealMax = 28;
+            const hours = filteredReadings.map(reading => reading.hour);
+            const temperatures = filteredReadings.map(reading => reading.temperature);
+
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [
+                        {
+                            label: 'Temperatura',
+                            data: temperatures,
+                            borderColor: '#4CAF50',
+                            backgroundColor: '#4CAF50',
+                            fill: false,
+                            borderWidth: 2,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Temperatura Mínima (26°C)',
+                            data: Array(hours.length).fill(idealMin),
+                            borderColor: 'rgba(128, 0, 64, 0.7)',
+                            fill: false,
+                            borderWidth: 3,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Temperatura Máxima (28°C)',
+                            data: Array(hours.length).fill(idealMax),
+                            borderColor: 'rgba(28, 57, 64, 0.7)',
+                            fill: false,
+                            borderWidth: 3,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    scales: {
+                        y: {
+                            min: 22,
+                            max: 30,
+                            stepSize: 0.5,
+                            title: {
+                                display: true,
+                                text: 'Temperatura (°C)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' °C';
+                                }
+                            },
+                            grid: {
+                                color: '#2f2f2f'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hora do Dia'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: '#2f2f2f'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#2c3e50'
+                            }
+                        }
+                    },
+                    backgroundColor: '#d3d3d3'
+                }
+            });
+        }
+
+        // Função para aplicar o filtro de data e atualizar o gráfico
+        async function applyFilter() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            const readings = await loadTemperatureData();
+
+            const filteredReadings = readings.filter(reading => {
+                return (!isNaN(startDate) && reading.timestamp >= startDate) &&
+                       (!isNaN(endDate) && reading.timestamp <= endDate);
+            });
+
+            // Limpar gráfico anterior e recriar com dados filtrados
+            document.getElementById('temperatureChart').remove();
+            const canvas = document.createElement('canvas');
+            canvas.id = 'temperatureChart';
+            canvas.width = 600;
+            canvas.height = 480;
+            document.getElementById('chart-container').appendChild(canvas);
+
+            createChart(filteredReadings);
+        }
+
+        // Carregar dados e inicializar o gráfico
+        loadTemperatureData().then(createChart);
+    </script>
+</body>
+</html>

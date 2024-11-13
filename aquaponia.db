@@ -1,0 +1,10 @@
+CREATE DATABASE aquaponia_db;
+
+USE aquaponia_db;
+
+CREATE TABLE temperature_readings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME,
+    hour VARCHAR(5),
+    temperature FLOAT
+);

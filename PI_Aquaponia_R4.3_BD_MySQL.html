@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <title>Projeto Integrador - Automação Aquaponia</title>
+    <style>
+        /* Manter o CSS conforme original */
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>PROJETO INTEGRADOR - UNIVESP</h1>
+        <!-- Campos de API Key, Channel ID e botões de controle -->
+        <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
+        
+        <!-- Gráfico de Temperatura -->
+        <h2 style="color:#2c3e50;font-weight: bold;font-size: 18px;">Temperatura:</h2>
+        <div id="chart-container">
+            <canvas id="temperatureChart" width="600" height="480"></canvas>
+        </div>
+    </div>
+
+    <script>
+        async function loadTemperatureData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            try {
+                const response = await fetch(`/api/temperature?startDate=${startDate}&endDate=${endDate}`);
+                if (!response.ok) throw new Error('Erro ao carregar dados');
+                
+                const data = await response.json();
+                return data.map(reading => ({
+                    hour: reading.hour,
+                    temperature: reading.temperature
+                }));
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                return [];
+            }
+        }
+
+        async function createChart(filteredReadings) {
+            const idealMin = 26;
+            const idealMax = 28;
+            const hours = filteredReadings.map(reading => reading.hour);
+            const temperatures = filteredReadings.map(reading => reading.temperature);
+
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [
+                        {
+                            label: 'Temperatura',
+                            data: temperatures,
+                            borderColor: '#4CAF50',
+                            backgroundColor: '#4CAF50',
+                            fill: false,
+                            borderWidth: 2,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Temperatura Mínima (26°C)',
+                            data: Array(hours.length).fill(idealMin),
+                            borderColor: 'rgba(128, 0, 64, 0.7)',
+                            fill: false,
+                            borderWidth: 3,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Temperatura Máxima (28°C)',
+                            data: Array(hours.length).fill(idealMax),
+                            borderColor: 'rgba(28, 57, 64, 0.7)',
+                            fill: false,
+                            borderWidth: 3,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    scales: {
+                        y: {
+                            min: 22,
+                            max: 30,
+                            stepSize: 0.5,
+                            title: {
+                                display: true,
+                                text: 'Temperatura (°C)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' °C';
+                                }
+                            },
+                            grid: {
+                                color: '#2f2f2f'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hora do Dia'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: '#2f2f2f'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#2c3e50'
+                            }
+                        }
+                    },
+                    backgroundColor: '#d3d3d3'
+                }
+            });
+        }
+
+        async function applyFilter() {
+            const readings = await loadTemperatureData();
+            document.getElementById('temperatureChart').remove();
+
+            const canvas = document.createElement('canvas');
+            canvas.id = 'temperatureChart';
+            canvas.width = 600;
+            canvas.height = 480;
+            document.getElementById('chart-container').appendChild(canvas);
+
+            createChart(readings);
+        }
+
+        // Carregar dados iniciais e gerar gráfico
+        document.addEventListener('DOMContentLoaded', async () => {
+            const initialReadings = await loadTemperatureData();
+            createChart(initialReadings);
+        });
+    </script>
+</body>
+</html>
