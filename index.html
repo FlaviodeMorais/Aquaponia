@@ -213,10 +213,10 @@
             });
 
             const analysisHTML = `
-                <p><strong>Tempo dentro do intervalo (26°C a 28°C):</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Tempo abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Tempo acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Total de leituras analisadas:</strong> ${readings.length}</p>
+                <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Total de Leituras:</strong> ${readings.length}</p>
             `;
             document.getElementById('analysisResults').innerHTML = analysisHTML;
         }
