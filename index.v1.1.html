@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <title>Projeto Integrador - Análise Avançada</title>
+    <style>
+        html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #2980b9;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        .export-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #chart-container {
+            margin: 20px auto;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .analysis {
+            margin: 20px auto;
+            width: 90%;
+            max-width: 800px;
+            text-align: left;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        canvas {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Projeto Integrador - Análise Avançada</h1>
+    <div class="controls">
+        <label>Início:</label>
+        <input type="date" id="startDate">
+        <label>Fim:</label>
+        <input type="date" id="endDate">
+        <button class="button" onclick="applyFilter()">Aplicar Filtro</button>
+        <button class="button export-button" onclick="exportData()">Exportar Relatório</button>
+    </div>
+    <div id="chart-container">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+    <div class="analysis" id="analysisResults"></div>
+
+    <script>
+        async function fetchCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    download: true,
+                    header: true,
+                    complete: results => resolve(results.data),
+                    error: error => reject(error)
+                });
+            });
+        }
+
+        async function loadTemperatureData() {
+            try {
+                const data = await fetchCSV('feeds.csv');
+                return data.map(row => ({
+                    timestamp: new Date(row.created_at),
+                    temperature: parseFloat(row.field3)
+                })).filter(reading => !isNaN(reading.temperature));
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                return [];
+            }
+        }
+
+        function calculateStatistics(readings) {
+            const temperatures = readings.map(r => r.temperature);
+            const total = temperatures.reduce((sum, t) => sum + t, 0);
+            const mean = total / temperatures.length;
+
+            const sorted = [...temperatures].sort((a, b) => a - b);
+            const median =
+                temperatures.length % 2 === 0
+                    ? (sorted[temperatures.length / 2 - 1] + sorted[temperatures.length / 2]) / 2
+                    : sorted[Math.floor(temperatures.length / 2)];
+
+            const variance = temperatures.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / temperatures.length;
+            const stddev = Math.sqrt(variance);
+
+            return { mean, median, stddev };
+        }
+
+        function displayAnalysis(readings) {
+            const stats = calculateStatistics(readings);
+            const minTemp = 26, maxTemp = 28;
+
+            const totalTime = readings.length * 5 / 60; // Assuming 5-min intervals
+            let insideRange = 0, belowMin = 0, aboveMax = 0;
+
+            readings.forEach(reading => {
+                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
+                else if (reading.temperature < minTemp) belowMin++;
+                else aboveMax++;
+            });
+
+            const results = `
+                <p><strong>Média:</strong> ${stats.mean.toFixed(2)} °C</p>
+                <p><strong>Mediana:</strong> ${stats.median.toFixed(2)} °C</p>
+                <p><strong>Desvio Padrão:</strong> ${stats.stddev.toFixed(2)} °C</p>
+                <p><strong>Tempo no intervalo (${minTemp}°C a ${maxTemp}°C):</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Tempo abaixo de ${minTemp}°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Tempo acima de ${maxTemp}°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
+            `;
+            document.getElementById('analysisResults').innerHTML = results;
+        }
+
+        async function createChart(readings) {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            const labels = readings.map(r => r.timestamp.toLocaleTimeString());
+            const temperatures = readings.map(r => r.temperature);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Temperatura',
+                            data: temperatures,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                            fill: true,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function applyFilter() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            const data = await loadTemperatureData();
+
+            const filtered = data.filter(r => r.timestamp >= startDate && r.timestamp <= endDate);
+
+            document.getElementById('temperatureChart').remove();
+            const canvas = document.createElement('canvas');
+            canvas.id = 'temperatureChart';
+            document.getElementById('chart-container').appendChild(canvas);
+
+            await createChart(filtered);
+            displayAnalysis(filtered);
+        }
+
+        function exportData() {
+            const csvContent = "data:text/csv;charset=utf-8,"
+                + document.getElementById('analysisResults').innerText.split('\n').join(',');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "analysis_report.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        loadTemperatureData().then(readings => {
+            createChart(readings);
+            displayAnalysis(readings);
+        });
+    </script>
+</body>
+</html>
