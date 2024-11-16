@@ -8,12 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
-        /* Estilos Globais */
         html {
             font-family: Arial;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             margin: 0 auto;
             text-align: center;
         }
@@ -25,101 +21,93 @@
 
         .buttonON, .buttonOFF {
             display: inline-block;
-            width: 100%;
-            max-width: 250px;
+            width: 250px;
             padding: 10px;
-            font-size: 1.2rem;
+            font-size: 18px;
             font-weight: bold;
-            cursor: pointer;
-            color: #fff;
+            color: white;
             border: none;
             border-radius: 5px;
-            box-shadow: 0 5px #999;
             margin: 5px;
+            cursor: pointer;
         }
-        
+
         .buttonON {
             background-color: #4CAF50;
-        }
-        .buttonON:hover {
-            background-color: #3e8e41;
         }
         .buttonOFF {
             background-color: #e74c3c;
         }
-        .buttonOFF:hover {
-            background-color: #c0392b;
-        }
 
         .text {
-            width: 80%;
-            max-width: 200px;
-            font-size: 1rem;
-            padding: 5px;
-            margin: 5px;
+            text-align: center;
+            font-size: 18px;
+            width: 200px;
+            height: 22px;
             border: 3px solid #9b59b6;
             border-radius: 5px;
+            padding: 5px;
+            margin: 5px;
         }
 
         .apply-button {
-            width: 80%;
-            max-width: 200px;
             background-color: #C0C0C0;
             color: #2c3e50;
-            font-size: 1rem;
-            padding: 10px;
+            font-size: 18px;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            margin-top: 10px;
         }
 
-        .apply-button:hover {
-            background-color: #A9A9A9;
-        }
-
+        /* Centralizar o gráfico */
         #chart-container {
             display: flex;
             justify-content: center;
-            margin-top: 20px;
-            width: 100%;
+            align-items: center;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 1200px;
         }
 
         canvas {
             width: 100%;
-            max-width: 600px;
+            max-width: 100%;
             height: auto;
         }
 
-        /* Responsividade */
+        /* Estilos Responsivos */
         @media (max-width: 768px) {
             h1 {
-                font-size: 1.5rem;
+                font-size: 1.8rem;
             }
             .buttonON, .buttonOFF {
-                font-size: 1rem;
-                max-width: 200px;
+                width: 90%;
+                font-size: 16px;
             }
             .text {
-                width: 100%;
-                font-size: 0.9rem;
+                width: 90%;
+                font-size: 16px;
             }
             .apply-button {
-                font-size: 0.9rem;
+                font-size: 16px;
+                width: 90%;
             }
         }
 
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.2rem;
+                font-size: 1.5rem;
             }
             .buttonON, .buttonOFF {
-                font-size: 0.8rem;
-                padding: 8px;
+                width: 100%;
+                font-size: 14px;
             }
-            .apply-button {
-                font-size: 0.8rem;
-                padding: 8px;
+            .text {
+                width: 100%;
+                font-size: 14px;
             }
         }
     </style>
@@ -128,57 +116,45 @@
 <body>
     <div>
         <h1>PROJETO INTEGRADOR - UNIVESP</h1>
-        <br>
-        <p style="color:#2c3e50;font-weight: bold;font-size: 1rem;">API Key : 
-            <input type="password" id="ts-api-key" class="text" placeholder="ThingSpeak API Key" />
-            <input type="checkbox" onclick="hideapikey()">Exibir API Key
+        <p>API Key:
+            <input type="password" id="ts-api-key" class="text" placeholder="ThingSpeak API Key">
+            <input type="checkbox" onclick="toggleVisibility('ts-api-key')"> Exibir
         </p>
-        <p style="color:#2c3e50;font-weight: bold;font-size: 1rem;">Channel ID : 
-            <input type="password" id="ts-channel-id" class="text" placeholder="ThingSpeak Channel ID" />
-            <input type="checkbox" onclick="hidechannelid()">Exibir Channel ID
+        <p>Channel ID:
+            <input type="password" id="ts-channel-id" class="text" placeholder="ThingSpeak Channel ID">
+            <input type="checkbox" onclick="toggleVisibility('ts-channel-id')"> Exibir
         </p>
-        <br>
 
         <button type="button" id="bomba-on" class="buttonON">Ligar Bomba</button>
-        <button type="button" id="bomba-off" class="buttonOFF">Desligar Bomba</button><br>
-        <br>
-
+        <button type="button" id="bomba-off" class="buttonOFF">Desligar Bomba</button>
         <button type="button" id="aqu-on" class="buttonON">Ligar Aquecedor</button>
-        <button type="button" id="aqu-off" class="buttonOFF">Desligar Aquecedor</button><br>
-        <br>
+        <button type="button" id="aqu-off" class="buttonOFF">Desligar Aquecedor</button>
 
-        <div style="text-align: center;">
-            <label style="font-size: 1rem; color:#2c3e50;">Início:</label>
+        <div>
+            <label>Início:</label>
             <input type="date" id="startDate" class="text">
-            <label style="font-size: 1rem; color:#2c3e50;">Fim:</label>
-            <input type="date" id="endDate" class="text"><br>
+            <label>Fim:</label>
+            <input type="date" id="endDate" class="text">
             <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
         </div>
-        <br><br>
 
-        <h2 style="color:#2c3e50;font-weight: bold;font-size: 1rem;">Temperatura:</h2>
+        <h2>Temperatura:</h2>
         <div id="chart-container">
             <canvas id="temperatureChart"></canvas>
         </div>
     </div>
 
     <script>
-        function hideapikey() {
-            var x = document.getElementById("ts-api-key");
-            x.type = x.type === "password" ? "text" : "password";
-        }
-
-        function hidechannelid() {
-            var x = document.getElementById("ts-channel-id");
-            x.type = x.type === "password" ? "text" : "password";
+        function toggleVisibility(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
         }
 
         async function loadTemperatureData() {
             const response = await fetch('feeds.csv');
             const data = await response.text();
             const rows = data.split('\n').slice(1);
-
-            const readings = rows.map(row => {
+            return rows.map(row => {
                 const [created_at, , , , field3] = row.split(',');
                 return {
                     timestamp: new Date(created_at),
@@ -186,17 +162,13 @@
                     temperature: parseFloat(field3)
                 };
             }).filter(reading => !isNaN(reading.temperature));
-
-            return readings;
         }
 
-        async function createChart(filteredReadings) {
-            const idealMin = 26;
-            const idealMax = 28;
-            const hours = filteredReadings.map(reading => reading.hour);
-            const temperatures = filteredReadings.map(reading => reading.temperature);
-
+        async function createChart(readings) {
             const ctx = document.getElementById('temperatureChart').getContext('2d');
+            const hours = readings.map(reading => reading.hour);
+            const temperatures = readings.map(reading => reading.temperature);
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -206,26 +178,28 @@
                             label: 'Temperatura',
                             data: temperatures,
                             borderColor: '#4CAF50',
-                            backgroundColor: '#4CAF50',
-                            fill: false,
+                            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                            fill: true,
                             borderWidth: 2,
                             tension: 0.1
                         },
                         {
                             label: 'Temperatura Mínima (26°C)',
-                            data: Array(hours.length).fill(idealMin),
-                            borderColor: 'rgba(128, 0, 64, 0.7)',
-                            fill: false,
-                            borderWidth: 3,
-                            pointRadius: 0
+                            data: Array(hours.length).fill(26),
+                            borderColor: 'rgba(255, 99, 132, 0.5)',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
                         },
                         {
                             label: 'Temperatura Máxima (28°C)',
-                            data: Array(hours.length).fill(idealMax),
-                            borderColor: 'rgba(28, 57, 64, 0.7)',
-                            fill: false,
-                            borderWidth: 3,
-                            pointRadius: 0
+                            data: Array(hours.length).fill(28),
+                            borderColor: 'rgba(54, 162, 235, 0.5)',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
                         }
                     ]
                 },
@@ -233,42 +207,35 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            min: 22,
-                            max: 30,
-                            title: {
-                                display: true,
-                                text: 'Temperatura (°C)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value + ' °C';
-                                }
-                            },
-                            grid: {
-                                color: '#2f2f2f'
-                            }
-                        },
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Hora do Dia'
-                            },
-                            grid: {
-                                color: '#2f2f2f'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#2c3e50'
-                            }
+                            title: { display: true, text: 'Hora do Dia' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Temperatura (°C)' },
+                            min: 20,
+                            max: 30
                         }
                     }
                 }
             });
         }
+
+        async function applyFilter() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            const data = await loadTemperatureData();
+
+            const filteredData = data.filter(reading => reading.timestamp >= startDate && reading.timestamp <= endDate);
+
+            document.getElementById('temperatureChart').remove();
+            const canvas = document.createElement('canvas');
+            canvas.id = 'temperatureChart';
+            document.getElementById('chart-container').appendChild(canvas);
+
+            createChart(filteredData);
+        }
+
+        loadTemperatureData().then(createChart);
     </script>
 </body>
 </html>
