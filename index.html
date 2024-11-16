@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
+        /* Estilo para manter a aparência original */
         html {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -43,7 +44,6 @@
         }
 
         .text {
-            text-align: center;
             font-size: 18px;
             width: 200px;
             height: 22px;
@@ -78,38 +78,6 @@
             width: 100%;
             max-width: 100%;
             height: auto;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            .buttonON, .buttonOFF {
-                width: 90%;
-                font-size: 16px;
-            }
-            .text {
-                width: 90%;
-                font-size: 16px;
-            }
-            .apply-button {
-                font-size: 16px;
-                width: 90%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-            .buttonON, .buttonOFF {
-                width: 100%;
-                font-size: 14px;
-            }
-            .text {
-                width: 100%;
-                font-size: 14px;
-            }
         }
     </style>
 </head>
@@ -152,7 +120,7 @@
         }
 
         async function loadTemperatureData() {
-            const response = await fetch('feeds.csv');
+            const response = await fetch('feeds.csv'); // Certifique-se de que feeds.csv está no mesmo diretório
             const data = await response.text();
             const rows = data.split('\\n').slice(1);
             return rows.map(row => {
@@ -181,8 +149,7 @@
                             borderColor: '#4CAF50',
                             backgroundColor: 'rgba(76, 175, 80, 0.2)',
                             fill: true,
-                            borderWidth: 2,
-                            tension: 0.1
+                            borderWidth: 2
                         },
                         {
                             label: 'Temperatura Mínima (26°C)',
@@ -206,39 +173,14 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        zoom: {
-                            zoom: {
-                                wheel: {
-                                    enabled: true
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x'
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            }
-                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     return `${context.dataset.label}: ${context.raw} °C`;
                                 }
                             }
-                        }
-                    },
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: { display: true, text: 'Hora do Dia' }
-                        },
-                        y: {
-                            title: { display: true, text: 'Temperatura (°C)' },
-                            min: 20,
-                            max: 30
                         }
                     }
                 }
@@ -264,4 +206,3 @@
     </script>
 </body>
 </html>
-
