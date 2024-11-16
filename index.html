@@ -62,6 +62,16 @@
             cursor: pointer;
         }
 
+        .export-button {
+            background-color: #4DB6AC;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
         #chart-container {
             margin: 20px auto;
             width: 90%;
@@ -76,20 +86,27 @@
 
         .analysis-results {
             margin-top: 20px;
-            text-align: left;
+            text-align: center;
             width: 90%;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
-            background-color: #F5F5F5;
-            border: 1px solid #CCC;
-            padding: 10px;
-            border-radius: 5px;
         }
 
-        .analysis-results p {
-            font-size: 16px;
-            color: #4DB6AC;
+        .analysis-results table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .analysis-results th, .analysis-results td {
+            border: 1px solid #CCC;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .analysis-results th {
+            background-color: #F5F5F5;
         }
 
         .button-container {
@@ -124,14 +141,26 @@
             <input type="date" id="endDate" class="text">
             <div class="button-container">
                 <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
-                <button type="button" class="apply-button" onclick="exportToPDF()">Exportar Relatório (PDF)</button>
+                <button type="button" class="export-button" onclick="exportToPDF()">Exportar Relatório (PDF)</button>
             </div>
         </div>
         <h2>Temperatura:</h2>
         <div id="chart-container">
             <canvas id="temperatureChart"></canvas>
         </div>
-        <div class="analysis-results" id="analysisResults"></div>
+        <div class="analysis-results" id="analysisResults">
+            <h3>Análise de Dados Avançada em Escala</h3>
+            <table id="analysisTable">
+                <thead>
+                    <tr>
+                        <th>Métrica</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
     <script>
         function toggleVisibility(id) {
@@ -148,9 +177,47 @@
                 const [created_at, , , , field3] = row.split(',');
                 return {
                     timestamp: new Date(created_at),
-                    temperature: parseFloat(field3)
+                    temperature: parseFloat(field3.toFixed(1)) // Padroniza uma casa decimal
                 };
             }).filter(reading => !isNaN(reading.temperature));
+        }
+
+        function updateAnalysisTable(mean, median, stdDev, insideRange, belowMin, aboveMax, total) {
+            const tbody = document.getElementById('analysisTable').querySelector('tbody');
+            tbody.innerHTML = `
+                <tr><td>Média</td><td>${mean}°C</td></tr>
+                <tr><td>Mediana</td><td>${median}°C</td></tr>
+                <tr><td>Desvio Padrão</td><td>${stdDev}°C</td></tr>
+                <tr><td>Temperatura entre 26°C a 28°C</td><td>${insideRange} horas</td></tr>
+                <tr><td>Abaixo de 26°C</td><td>${belowMin} horas</td></tr>
+                <tr><td>Acima de 28°C</td><td>${aboveMax} horas</td></tr>
+                <tr><td>Total de Leituras</td><td>${total}</td></tr>
+            `;
+        }
+
+        function analyzeTemperatureData(readings) {
+            const minTemp = 26, maxTemp = 28;
+            const temperatures = readings.map(r => r.temperature);
+            const mean = (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(1);
+            const median = (() => {
+                const sorted = [...temperatures].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                return sorted.length % 2 !== 0
+                    ? sorted[mid]
+                    : ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(1);
+            })();
+            const variance = temperatures.reduce((sum, temp) => sum + Math.pow(temp - mean, 2), 0) / temperatures.length;
+            const stdDev = Math.sqrt(variance).toFixed(1);
+
+            let insideRange = 0, belowMin = 0, aboveMax = 0;
+            readings.forEach(reading => {
+                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
+                else if (reading.temperature < minTemp) belowMin++;
+                else if (reading.temperature > maxTemp) aboveMax++;
+            });
+
+            updateAnalysisTable(mean, median, stdDev, (insideRange * 5 / 60).toFixed(1), (belowMin * 5 / 60).toFixed(1), (aboveMax * 5 / 60).toFixed(1), readings.length
+            );
         }
 
         async function createChart(readings) {
@@ -198,41 +265,7 @@
             });
         }
 
-        function analyzeTemperatureData(readings) {
-            const minTemp = 26, maxTemp = 28;
-            const temperatures = readings.map(r => r.temperature);
-            const mean = (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(2);
-            const median = (() => {
-                const sorted = [...temperatures].sort((a, b) => a - b);
-                const mid = Math.floor(sorted.length / 2);
-                return sorted.length % 2 !== 0
-                    ? sorted[mid]
-                    : ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2);
-            })();
-            const variance = temperatures.reduce((sum, temp) => sum + Math.pow(temp - mean, 2), 0) / temperatures.length;
-            const stdDev = Math.sqrt(variance).toFixed(2);
-
-            let insideRange = 0, belowMin = 0, aboveMax = 0;
-            readings.forEach(reading => {
-                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
-                else if (reading.temperature < minTemp) belowMin++;
-                else if (reading.temperature > maxTemp) aboveMax++;
-            });
-
-            const analysisHTML = `
-                <p><strong>Média:</strong> ${mean}°C</p>
-                <p><strong>Mediana:</strong> ${median}°C</p>
-                <p><strong>Desvio Padrão:</strong> ${stdDev}°C</p>
-                <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Total de Leituras:</strong> ${readings.length}</p>
-            `;
-            document.getElementById('analysisResults').innerHTML = analysisHTML;
-        }
-
         async function exportToPDF() {
-           
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF();
             pdf.text('Relatório de Temperatura', 10, 10);
@@ -241,7 +274,9 @@
             const chartDataURL = chartCanvas.toDataURL('image/png');
             pdf.addImage(chartDataURL, 'PNG', 10, 20, 190, 100);
 
-            const analysisText = document.getElementById('analysisResults').innerText.split('\n');
+            const analysisText = Array.from(document.querySelectorAll('#analysisTable tbody tr')).map(row => {
+                return row.innerText.split('\t').join(': ');
+            });
             let yPosition = 130;
             analysisText.forEach(line => {
                 pdf.text(line, 10, yPosition);
@@ -272,6 +307,8 @@
             analyzeTemperatureData(readings);
         });
     </script>
+</body>
+</html>
 </body>
 </html>
 
