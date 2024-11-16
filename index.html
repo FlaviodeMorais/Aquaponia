@@ -6,7 +6,6 @@
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
         html {
@@ -62,16 +61,6 @@
             cursor: pointer;
         }
 
-        .export-button {
-            background-color: #4DB6AC;
-            color: white;
-            font-size: 16px;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
         #chart-container {
             margin: 20px auto;
             width: 90%;
@@ -86,35 +75,20 @@
 
         .analysis-results {
             margin-top: 20px;
-            text-align: center;
+            text-align: left;
             width: 90%;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
-        }
-
-        .analysis-results table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .analysis-results th, .analysis-results td {
+            background-color: #F5F5F5; /* Cinza pérola claro */
             border: 1px solid #CCC;
-            padding: 8px;
-            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
         }
 
-        .analysis-results th {
-            background-color: #F5F5F5;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
+        .analysis-results p {
+            font-size: 16px;
+            color: #4DB6AC; /* Azul-petróleo suave */
         }
     </style>
 </head>
@@ -139,28 +113,13 @@
             <input type="date" id="startDate" class="text">
             <label>Fim:</label>
             <input type="date" id="endDate" class="text">
-            <div class="button-container">
-                <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
-                <button type="button" class="export-button" onclick="exportToPDF()">Exportar Relatório (PDF)</button>
-            </div>
+            <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
         </div>
         <h2>Temperatura:</h2>
         <div id="chart-container">
             <canvas id="temperatureChart"></canvas>
         </div>
-        <div class="analysis-results" id="analysisResults">
-            <h3>Análise de Dados Avançada em Escala</h3>
-            <table id="analysisTable">
-                <thead>
-                    <tr>
-                        <th>Métrica</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
+        <div class="analysis-results" id="analysisResults"></div>
     </div>
     <script>
         function toggleVisibility(id) {
@@ -177,47 +136,9 @@
                 const [created_at, , , , field3] = row.split(',');
                 return {
                     timestamp: new Date(created_at),
-                    temperature: parseFloat(field3.toFixed(1)) // Padroniza uma casa decimal
+                    temperature: parseFloat(field3)
                 };
             }).filter(reading => !isNaN(reading.temperature));
-        }
-
-        function updateAnalysisTable(mean, median, stdDev, insideRange, belowMin, aboveMax, total) {
-            const tbody = document.getElementById('analysisTable').querySelector('tbody');
-            tbody.innerHTML = `
-                <tr><td>Média</td><td>${mean}°C</td></tr>
-                <tr><td>Mediana</td><td>${median}°C</td></tr>
-                <tr><td>Desvio Padrão</td><td>${stdDev}°C</td></tr>
-                <tr><td>Temperatura entre 26°C a 28°C</td><td>${insideRange} horas</td></tr>
-                <tr><td>Abaixo de 26°C</td><td>${belowMin} horas</td></tr>
-                <tr><td>Acima de 28°C</td><td>${aboveMax} horas</td></tr>
-                <tr><td>Total de Leituras</td><td>${total}</td></tr>
-            `;
-        }
-
-        function analyzeTemperatureData(readings) {
-            const minTemp = 26, maxTemp = 28;
-            const temperatures = readings.map(r => r.temperature);
-            const mean = (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(1);
-            const median = (() => {
-                const sorted = [...temperatures].sort((a, b) => a - b);
-                const mid = Math.floor(sorted.length / 2);
-                return sorted.length % 2 !== 0
-                    ? sorted[mid]
-                    : ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(1);
-            })();
-            const variance = temperatures.reduce((sum, temp) => sum + Math.pow(temp - mean, 2), 0) / temperatures.length;
-            const stdDev = Math.sqrt(variance).toFixed(1);
-
-            let insideRange = 0, belowMin = 0, aboveMax = 0;
-            readings.forEach(reading => {
-                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
-                else if (reading.temperature < minTemp) belowMin++;
-                else if (reading.temperature > maxTemp) aboveMax++;
-            });
-
-            updateAnalysisTable(mean, median, stdDev, (insideRange * 5 / 60).toFixed(1), (belowMin * 5 / 60).toFixed(1), (aboveMax * 5 / 60).toFixed(1), readings.length
-            );
         }
 
         async function createChart(readings) {
@@ -233,15 +154,15 @@
                         {
                             label: 'Temperatura',
                             data: temperatures,
-                            borderColor: '#4DB6AC',
-                            backgroundColor: 'rgba(77, 182, 172, 0.2)',
+                            borderColor: '#4DB6AC', // Azul-petróleo suave
+                            backgroundColor: 'rgba(77, 182, 172, 0.2)', // Transparente
                             fill: true,
                             borderWidth: 2
                         },
                         {
                             label: 'Temperatura Mínima (26°C)',
                             data: Array(labels.length).fill(26),
-                            borderColor: '#FF7043',
+                            borderColor: '#FF7043', // Laranja suave coral
                             borderWidth: 2,
                             pointRadius: 0,
                             borderDash: [5, 5],
@@ -250,7 +171,7 @@
                         {
                             label: 'Temperatura Máxima (28°C)',
                             data: Array(labels.length).fill(28),
-                            borderColor: '#7E57C2',
+                            borderColor: '#7E57C2', // Roxo real
                             borderWidth: 2,
                             pointRadius: 0,
                             borderDash: [5, 5],
@@ -261,29 +182,43 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Hora do Dia', color: '#333' },
+                        },
+                        y: {
+                            title: { display: true, text: 'Temperatura (°C)', color: '#333' },
+                            min: 24,
+                            max: 32,
+                            ticks: { stepSize: 1, color: '#333' },
+                            grid: { color: '#E0E0E0' },
+                        },
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#333' } },
+                    },
                 },
             });
         }
 
-        async function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            pdf.text('Relatório de Temperatura', 10, 10);
+        function analyzeTemperatureData(readings) {
+            const minTemp = 26, maxTemp = 28;
+            const totalTime = readings.length * 5 / 60; // Assume intervalos de 5 minutos
+            let insideRange = 0, belowMin = 0, aboveMax = 0;
 
-            const chartCanvas = document.getElementById('temperatureChart');
-            const chartDataURL = chartCanvas.toDataURL('image/png');
-            pdf.addImage(chartDataURL, 'PNG', 10, 20, 190, 100);
-
-            const analysisText = Array.from(document.querySelectorAll('#analysisTable tbody tr')).map(row => {
-                return row.innerText.split('\t').join(': ');
-            });
-            let yPosition = 130;
-            analysisText.forEach(line => {
-                pdf.text(line, 10, yPosition);
-                yPosition += 10;
+            readings.forEach(reading => {
+                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
+                else if (reading.temperature < minTemp) belowMin++;
+                else if (reading.temperature > maxTemp) aboveMax++;
             });
 
-            pdf.save('relatorio-temperatura.pdf');
+            const analysisHTML = `
+                <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Total de Leituras:</strong> ${readings.length}</p>
+            `;
+            document.getElementById('analysisResults').innerHTML = analysisHTML;
         }
 
         async function applyFilter() {
