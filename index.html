@@ -6,7 +6,6 @@
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
         html {
@@ -34,8 +33,13 @@
             cursor: pointer;
         }
 
-        .buttonON { background-color: #4CAF50; }
-        .buttonOFF { background-color: #e74c3c; }
+        .buttonON {
+            background-color: #4CAF50;
+        }
+
+        .buttonOFF {
+            background-color: #e74c3c;
+        }
 
         .text {
             font-size: 16px;
@@ -76,18 +80,19 @@
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
+            background-color: #F5F5F5; /* Cinza pérola claro */
+            border: 1px solid #CCC;
             padding: 10px;
             border-radius: 5px;
         }
 
         .analysis-results p {
             font-size: 16px;
-            color: #2c3e50;
+            color: #4DB6AC; /* Azul-petróleo suave */
         }
     </style>
 </head>
+
 <body>
     <div>
         <h1>PROJETO INTEGRADOR - UNIVESP</h1>
@@ -114,9 +119,7 @@
         <div id="chart-container">
             <canvas id="temperatureChart"></canvas>
         </div>
-        <div class="analysis-results" id="analysisResults">
-            <!-- Resultados de análise -->
-        </div>
+        <div class="analysis-results" id="analysisResults"></div>
     </div>
     <script>
         function toggleVisibility(id) {
@@ -151,44 +154,56 @@
                         {
                             label: 'Temperatura',
                             data: temperatures,
-                            borderColor: 'rgba(128, 128, 0, 0.8)', // Verde oliva com transparência
-                            backgroundColor: 'rgba(128, 128, 0, 0.3)',
+                            borderColor: '#4DB6AC', // Azul-petróleo suave
+                            backgroundColor: 'rgba(77, 182, 172, 0.2)', // Transparente
                             fill: true,
                             borderWidth: 2
                         },
                         {
                             label: 'Temperatura Mínima (26°C)',
                             data: Array(labels.length).fill(26),
-                            borderColor: 'darkred',
+                            borderColor: '#FF7043', // Laranja suave coral
                             borderWidth: 2,
-                            fill: false
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            fill: false,
                         },
                         {
                             label: 'Temperatura Máxima (28°C)',
                             data: Array(labels.length).fill(28),
-                            borderColor: 'teal',
+                            borderColor: '#7E57C2', // Roxo real
                             borderWidth: 2,
-                            fill: false
-                        }
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            fill: false,
+                        },
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { title: { display: true, text: 'Hora do Dia' } },
-                        y: { 
-                            title: { display: true, text: 'Temperatura (°C)' },
-                            min: 24, // Valor mínimo ajustado
-                            max: 32 // Valor máximo ajustado
-                        }
-                    }
-                }
+                        x: {
+                            title: { display: true, text: 'Hora do Dia', color: '#333' },
+                        },
+                        y: {
+                            title: { display: true, text: 'Temperatura (°C)', color: '#333' },
+                            min: 24,
+                            max: 32,
+                            ticks: { stepSize: 1, color: '#333' },
+                            grid: { color: '#E0E0E0' },
+                        },
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#333' } },
+                    },
+                },
             });
         }
 
         function analyzeTemperatureData(readings) {
             const minTemp = 26, maxTemp = 28;
+            const totalTime = readings.length * 5 / 60; // Assume intervalos de 5 minutos
             let insideRange = 0, belowMin = 0, aboveMax = 0;
 
             readings.forEach(reading => {
