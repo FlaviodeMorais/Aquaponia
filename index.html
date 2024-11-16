@@ -224,6 +224,7 @@
             const analysisHTML = `
                 <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
                 <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Acima de 28°C:</strong> ${(above
                 <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
                 <p><strong>Total de Leituras:</strong> ${readings.length}</p>
             `;
@@ -237,9 +238,20 @@
 
             const filteredData = data.filter(reading => reading.timestamp >= startDate && reading.timestamp <= endDate);
 
+            if (filteredData.length === 0) {
+                document.getElementById('analysisResults').innerHTML = `
+                    <p style="color: red; text-align: center;"><strong>Nenhum dado encontrado para o período selecionado.</strong></p>
+                `;
+                document.getElementById('temperatureChart').remove();
+                const canvas = document.createElement('canvas');
+                canvas.id = 'temperatureChart';
+                document.getElementById('chart-container').appendChild(canvas);
+                return;
+            }
+
             document.getElementById('temperatureChart').remove();
             const canvas = document.createElement('canvas');
-            canvas.id = 'temperatureChart
+            canvas.id = 'temperatureChart';
             document.getElementById('chart-container').appendChild(canvas);
 
             createChart(filteredData);
@@ -263,11 +275,20 @@
             pdf.text(`Período Selecionado: ${startDate} a ${endDate}`, 10, 20);
 
             // Adicionar análise de resultados
-            pdf.fromHTML(analysisResults, 10, 30);
+            const analysisElement = document.createElement('div');
+            analysisElement.innerHTML = analysisResults;
+            const analysisText = analysisElement.innerText || '';
+            const lines = analysisText.split('\n');
+            let yPosition = 30;
+            lines.forEach(line => {
+                pdf.text(line, 10, yPosition);
+                yPosition += 10;
+            });
 
             // Adicionar o gráfico como imagem
-            const canvasImage = chartCanvas.toDataURL('image/png', 1.0);
-            pdf.addImage(canvasImage, 'PNG', 10, 80, 190, 90); // Ajustar posição e tamanho conforme necessário
+            const canvasImage = await html2canvas(chartCanvas);
+            const imgData = canvasImage.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 10, yPosition + 10, 190, 90);
 
             // Salvar PDF
             pdf.save('relatorio_aquaponia.pdf');
