@@ -120,17 +120,27 @@
         }
 
         async function loadTemperatureData() {
-            const response = await fetch('feeds.csv'); // Certifique-se de que feeds.csv está no mesmo diretório
-            const data = await response.text();
-            const rows = data.split('\\n').slice(1);
-            return rows.map(row => {
-                const [created_at, , , , field3] = row.split(',');
-                return {
-                    timestamp: new Date(created_at),
-                    hour: new Date(created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                    temperature: parseFloat(field3)
-                };
-            }).filter(reading => !isNaN(reading.temperature));
+            try {
+                const response = await fetch('feeds.csv'); // Tente carregar o CSV
+                const data = await response.text();
+                const rows = data.split('\n').slice(1); // Ignorar o cabeçalho
+                return rows.map(row => {
+                    const [created_at, , , , field3] = row.split(','); // Selecionar colunas relevantes
+                    return {
+                        timestamp: new Date(created_at),
+                        hour: new Date(created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                        temperature: parseFloat(field3)
+                    };
+                }).filter(reading => !isNaN(reading.temperature)); // Filtrar valores válidos
+            } catch (error) {
+                console.error('Erro ao carregar dados do CSV:', error);
+                // Dados embutidos para fallback
+                return [
+                    { timestamp: new Date('2024-05-01T08:00:00Z'), hour: '08:00', temperature: 25.5 },
+                    { timestamp: new Date('2024-05-01T09:00:00Z'), hour: '09:00', temperature: 26.2 },
+                    { timestamp: new Date('2024-05-01T10:00:00Z'), hour: '10:00', temperature: 27.8 }
+                ];
+            }
         }
 
         async function createChart(readings) {
