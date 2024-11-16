@@ -199,6 +199,7 @@
         }
 
         function analyzeTemperatureData(readings) {
+            const minTemp = 26, maxTemp = 28;
             const temperatures = readings.map(r => r.temperature);
             const mean = (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(2);
             const median = (() => {
@@ -211,20 +212,42 @@
             const variance = temperatures.reduce((sum, temp) => sum + Math.pow(temp - mean, 2), 0) / temperatures.length;
             const stdDev = Math.sqrt(variance).toFixed(2);
 
+            let insideRange = 0, belowMin = 0, aboveMax = 0;
+            readings.forEach(reading => {
+                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
+                else if (reading.temperature < minTemp) belowMin++;
+                else if (reading.temperature > maxTemp) aboveMax++;
+            });
+
             const analysisHTML = `
                 <p><strong>Média:</strong> ${mean}°C</p>
                 <p><strong>Mediana:</strong> ${median}°C</p>
                 <p><strong>Desvio Padrão:</strong> ${stdDev}°C</p>
+                <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
                 <p><strong>Total de Leituras:</strong> ${readings.length}</p>
             `;
             document.getElementById('analysisResults').innerHTML = analysisHTML;
         }
 
         async function exportToPDF() {
+           
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF();
             pdf.text('Relatório de Temperatura', 10, 10);
-            pdf.addImage(document.getElementById('temperatureChart'), 'PNG', 10, 20, 190, 100);
+
+            const chartCanvas = document.getElementById('temperatureChart');
+            const chartDataURL = chartCanvas.toDataURL('image/png');
+            pdf.addImage(chartDataURL, 'PNG', 10, 20, 190, 100);
+
+            const analysisText = document.getElementById('analysisResults').innerText.split('\n');
+            let yPosition = 130;
+            analysisText.forEach(line => {
+                pdf.text(line, 10, yPosition);
+                yPosition += 10;
+            });
+
             pdf.save('relatorio-temperatura.pdf');
         }
 
@@ -251,3 +274,4 @@
     </script>
 </body>
 </html>
+
