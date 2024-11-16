@@ -15,5 +15,12 @@ Entrega do relatório parcial e construção da proposta de solução
 Análise dos resultados
 21/10
 Finalização da solução
-04/11
-Entrega do relatório final e do vídeo
+Quinzena 7 04/11/2024 Relatório Final,
+Avaliação
+Colaborativa e
+Vídeo
+12/11/2024
+às 23:59
+17/11/2024
+às 23:59
+
