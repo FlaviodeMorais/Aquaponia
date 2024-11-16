@@ -6,19 +6,21 @@
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
-        /* Seu CSS existente */
         html {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             text-align: center;
         }
+
         h1 {
             font-size: 2rem;
             color: #2980b9;
         }
+
         .buttonON, .buttonOFF {
             display: inline-block;
             width: 200px;
@@ -31,8 +33,10 @@
             margin: 5px;
             cursor: pointer;
         }
+
         .buttonON { background-color: #4CAF50; }
         .buttonOFF { background-color: #e74c3c; }
+
         .text {
             font-size: 16px;
             width: 180px;
@@ -42,6 +46,7 @@
             border: 2px solid #9b59b6;
             border-radius: 5px;
         }
+
         .apply-button {
             background-color: #C0C0C0;
             color: #2c3e50;
@@ -51,16 +56,19 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         #chart-container {
             margin: 20px auto;
             width: 90%;
             max-width: 1200px;
         }
+
         canvas {
             width: 100%;
             max-width: 100%;
             height: auto;
         }
+
         .analysis-results {
             margin-top: 20px;
             text-align: left;
@@ -73,6 +81,7 @@
             padding: 10px;
             border-radius: 5px;
         }
+
         .analysis-results p {
             font-size: 16px;
             color: #2c3e50;
@@ -106,7 +115,7 @@
             <canvas id="temperatureChart"></canvas>
         </div>
         <div class="analysis-results" id="analysisResults">
-            <!-- Resultados de análise aparecerão aqui -->
+            <!-- Resultados de análise -->
         </div>
     </div>
     <script>
@@ -138,21 +147,41 @@
                 type: 'line',
                 data: {
                     labels,
-                    datasets: [{
-                        label: 'Temperatura',
-                        data: temperatures,
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                        fill: true,
-                        borderWidth: 2
-                    }]
+                    datasets: [
+                        {
+                            label: 'Temperatura',
+                            data: temperatures,
+                            borderColor: 'rgba(128, 128, 0, 0.8)', // Verde oliva com transparência
+                            backgroundColor: 'rgba(128, 128, 0, 0.3)',
+                            fill: true,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Temperatura Mínima (26°C)',
+                            data: Array(labels.length).fill(26),
+                            borderColor: 'darkred',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Temperatura Máxima (28°C)',
+                            data: Array(labels.length).fill(28),
+                            borderColor: 'teal',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         x: { title: { display: true, text: 'Hora do Dia' } },
-                        y: { title: { display: true, text: 'Temperatura (°C)' } }
+                        y: { 
+                            title: { display: true, text: 'Temperatura (°C)' },
+                            min: 24, // Valor mínimo ajustado
+                            max: 32 // Valor máximo ajustado
+                        }
                     }
                 }
             });
@@ -160,7 +189,6 @@
 
         function analyzeTemperatureData(readings) {
             const minTemp = 26, maxTemp = 28;
-            const totalTime = readings.length * 5 / 60; // Assume intervalos de 5 minutos entre leituras
             let insideRange = 0, belowMin = 0, aboveMax = 0;
 
             readings.forEach(reading => {
