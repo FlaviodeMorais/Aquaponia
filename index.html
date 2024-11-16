@@ -3,18 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
-        /* Estilo para manter a aparência original */
         html {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             text-align: center;
+            margin: 0 auto;
         }
 
         h1 {
@@ -22,197 +18,187 @@
             color: #2980b9;
         }
 
-        .buttonON, .buttonOFF {
-            display: inline-block;
-            width: 250px;
+        .form-group {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .form-group input[type="password"],
+        .form-group input[type="date"] {
             padding: 10px;
-            font-size: 18px;
+            font-size: 14px;
+            border: 2px solid #9b59b6;
+            border-radius: 5px;
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-left: 5px;
+        }
+
+        .buttonON, .buttonOFF {
+            padding: 10px 20px;
+            font-size: 16px;
             font-weight: bold;
-            color: white;
-            border: none;
             border-radius: 5px;
             margin: 5px;
             cursor: pointer;
+            border: none;
         }
 
         .buttonON {
             background-color: #4CAF50;
+            color: white;
         }
 
         .buttonOFF {
             background-color: #e74c3c;
-        }
-
-        .text {
-            font-size: 18px;
-            width: 200px;
-            height: 22px;
-            border: 3px solid #9b59b6;
-            border-radius: 5px;
-            padding: 5px;
-            margin: 5px;
+            color: white;
         }
 
         .apply-button {
             background-color: #C0C0C0;
             color: #2c3e50;
-            font-size: 18px;
-            padding: 10px 20px;
+            font-size: 16px;
+            padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
         }
 
         #chart-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100%;
+            max-width: 800px;
             margin: 20px auto;
-            width: 90%;
-            max-width: 1200px;
         }
 
         canvas {
             width: 100%;
-            max-width: 100%;
-            height: auto;
+        }
+
+        .analysis {
+            margin-top: 20px;
+            text-align: left;
+            width: 80%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
-
 <body>
-    <div>
-        <h1>PROJETO INTEGRADOR - UNIVESP</h1>
-        <p>API Key:
-            <input type="password" id="ts-api-key" class="text" placeholder="ThingSpeak API Key">
-            <input type="checkbox" onclick="toggleVisibility('ts-api-key')"> Exibir
-        </p>
-        <p>Channel ID:
-            <input type="password" id="ts-channel-id" class="text" placeholder="ThingSpeak Channel ID">
-            <input type="checkbox" onclick="toggleVisibility('ts-channel-id')"> Exibir
-        </p>
+    <h1>PROJETO INTEGRADOR - UNIVESP</h1>
 
-        <button type="button" id="bomba-on" class="buttonON">Ligar Bomba</button>
-        <button type="button" id="bomba-off" class="buttonOFF">Desligar Bomba</button>
-        <button type="button" id="aqu-on" class="buttonON">Ligar Aquecedor</button>
-        <button type="button" id="aqu-off" class="buttonOFF">Desligar Aquecedor</button>
+    <div class="form-group">
+        <label>API Key:</label>
+        <input type="password" id="ts-api-key" value="BY3NQR5RTECHYXQ5">
+        <input type="checkbox" onclick="toggleVisibility('ts-api-key')"> Exibir
+    </div>
 
-        <div>
-            <label>Início:</label>
-            <input type="date" id="startDate" class="text">
-            <label>Fim:</label>
-            <input type="date" id="endDate" class="text">
-            <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
-        </div>
+    <div class="form-group">
+        <label>Channel ID:</label>
+        <input type="password" id="ts-channel-id" value="2533413">
+        <input type="checkbox" onclick="toggleVisibility('ts-channel-id')"> Exibir
+    </div>
 
-        <h2>Temperatura:</h2>
-        <div id="chart-container">
-            <canvas id="temperatureChart"></canvas>
-        </div>
+    <div class="form-group">
+        <button class="buttonON">Ligar Bomba</button>
+        <button class="buttonOFF">Desligar Bomba</button>
+    </div>
+
+    <div class="form-group">
+        <button class="buttonON">Ligar Aquecedor</button>
+        <button class="buttonOFF">Desligar Aquecedor</button>
+    </div>
+
+    <div class="form-group">
+        <label>Início:</label>
+        <input type="date" id="startDate">
+        <label>Fim:</label>
+        <input type="date" id="endDate">
+    </div>
+
+    <button class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
+
+    <h2>Temperatura:</h2>
+    <div id="chart-container">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+
+    <div class="analysis">
+        <h3>Análise:</h3>
+        <p id="in-range">Dentro do Range (26°C - 28°C): <b>0 horas</b></p>
+        <p id="above-max">Acima da Máxima (28°C): <b>0 horas</b></p>
+        <p id="below-min">Abaixo da Mínima (26°C): <b>0 horas</b></p>
     </div>
 
     <script>
         function toggleVisibility(id) {
             const input = document.getElementById(id);
-            input.type = input.type === "password" ? "text" : "password";
+            input.type = input.type === 'password' ? 'text' : 'password';
         }
 
         async function loadTemperatureData() {
-            try {
-                const response = await fetch('feeds.csv'); // Tente carregar o CSV
-                const data = await response.text();
-                const rows = data.split('\n').slice(1); // Ignorar o cabeçalho
-                return rows.map(row => {
-                    const [created_at, , , , field3] = row.split(','); // Selecionar colunas relevantes
-                    return {
-                        timestamp: new Date(created_at),
-                        hour: new Date(created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                        temperature: parseFloat(field3)
-                    };
-                }).filter(reading => !isNaN(reading.temperature)); // Filtrar valores válidos
-            } catch (error) {
-                console.error('Erro ao carregar dados do CSV:', error);
-                // Dados embutidos para fallback
-                return [
-                    { timestamp: new Date('2024-05-01T08:00:00Z'), hour: '08:00', temperature: 25.5 },
-                    { timestamp: new Date('2024-05-01T09:00:00Z'), hour: '09:00', temperature: 26.2 },
-                    { timestamp: new Date('2024-05-01T10:00:00Z'), hour: '10:00', temperature: 27.8 }
-                ];
-            }
-        }
-
-        async function createChart(readings) {
-            const ctx = document.getElementById('temperatureChart').getContext('2d');
-            const hours = readings.map(reading => reading.hour);
-            const temperatures = readings.map(reading => reading.temperature);
-
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: hours,
-                    datasets: [
-                        {
-                            label: 'Temperatura',
-                            data: temperatures,
-                            borderColor: '#4CAF50',
-                            backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                            fill: true,
-                            borderWidth: 2
-                        },
-                        {
-                            label: 'Temperatura Mínima (26°C)',
-                            data: Array(hours.length).fill(26),
-                            borderColor: 'rgba(255, 99, 132, 0.5)',
-                            borderDash: [5, 5],
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            fill: false
-                        },
-                        {
-                            label: 'Temperatura Máxima (28°C)',
-                            data: Array(hours.length).fill(28),
-                            borderColor: 'rgba(54, 162, 235, 0.5)',
-                            borderDash: [5, 5],
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.raw} °C`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            const response = await fetch('feeds.csv');
+            const data = await response.text();
+            const rows = data.split('\n').slice(1);
+            return rows.map(row => {
+                const [timestamp, , , , temp] = row.split(',');
+                return {
+                    timestamp: new Date(timestamp),
+                    temperature: parseFloat(temp)
+                };
+            }).filter(entry => !isNaN(entry.temperature));
         }
 
         async function applyFilter() {
             const startDate = new Date(document.getElementById('startDate').value);
             const endDate = new Date(document.getElementById('endDate').value);
             const data = await loadTemperatureData();
+            const filteredData = data.filter(entry => entry.timestamp >= startDate && entry.timestamp <= endDate);
 
-            const filteredData = data.filter(reading => reading.timestamp >= startDate && reading.timestamp <= endDate);
+            const hoursInRange = filteredData.filter(entry => entry.temperature >= 26 && entry.temperature <= 28).length / 60;
+            const hoursAboveMax = filteredData.filter(entry => entry.temperature > 28).length / 60;
+            const hoursBelowMin = filteredData.filter(entry => entry.temperature < 26).length / 60;
 
-            document.getElementById('temperatureChart').remove();
-            const canvas = document.createElement('canvas');
-            canvas.id = 'temperatureChart';
-            document.getElementById('chart-container').appendChild(canvas);
+            document.getElementById('in-range').innerHTML = `Dentro do Range (26°C - 28°C): <b>${hoursInRange.toFixed(2)} horas</b>`;
+            document.getElementById('above-max').innerHTML = `Acima da Máxima (28°C): <b>${hoursAboveMax.toFixed(2)} horas</b>`;
+            document.getElementById('below-min').innerHTML = `Abaixo da Mínima (26°C): <b>${hoursBelowMin.toFixed(2)} horas</b>`;
 
             createChart(filteredData);
+        }
+
+        function createChart(data) {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(entry => entry.timestamp.toLocaleTimeString()),
+                    datasets: [{
+                        label: 'Temperatura',
+                        data: data.map(entry => entry.temperature),
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Hora do Dia' } },
+                        y: { title: { display: true, text: 'Temperatura (°C)' }, min: 20, max: 30 }
+                    }
+                }
+            });
         }
 
         loadTemperatureData().then(createChart);
     </script>
 </body>
 </html>
+
