@@ -6,6 +6,8 @@
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
         html {
@@ -51,7 +53,7 @@
             border-radius: 5px;
         }
 
-        .apply-button {
+        .apply-button, .export-button {
             background-color: #C0C0C0;
             color: #2c3e50;
             font-size: 16px;
@@ -59,6 +61,12 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .export-button {
+            background-color: #3498db;
+            color: white;
         }
 
         #chart-container {
@@ -114,6 +122,7 @@
             <label>Fim:</label>
             <input type="date" id="endDate" class="text">
             <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
+            <button type="button" class="export-button" onclick="exportReport()">Exportar Relatório</button>
         </div>
         <h2>Temperatura:</h2>
         <div id="chart-container">
@@ -203,7 +212,7 @@
 
         function analyzeTemperatureData(readings) {
             const minTemp = 26, maxTemp = 28;
-            const totalTime = readings.length * 5 / 60; // Assume intervalos de 5 minutos
+            const totalTime = readings.length * 5 / 60;
             let insideRange = 0, belowMin = 0, aboveMax = 0;
 
             readings.forEach(reading => {
@@ -230,11 +239,38 @@
 
             document.getElementById('temperatureChart').remove();
             const canvas = document.createElement('canvas');
-            canvas.id = 'temperatureChart';
+            canvas.id = 'temperatureChart
             document.getElementById('chart-container').appendChild(canvas);
 
             createChart(filteredData);
             analyzeTemperatureData(filteredData);
+        }
+
+        async function exportReport() {
+            const startDate = document.getElementById('startDate').value || 'N/A';
+            const endDate = document.getElementById('endDate').value || 'N/A';
+            const chartCanvas = document.getElementById('temperatureChart');
+            const analysisResults = document.getElementById('analysisResults').innerHTML;
+
+            const { jsPDF } = window.jspdf;
+
+            const pdf = new jsPDF();
+            pdf.setFontSize(16);
+            pdf.text('Relatório de Análise - Automação Aquaponia', 10, 10);
+
+            // Adicionar período
+            pdf.setFontSize(12);
+            pdf.text(`Período Selecionado: ${startDate} a ${endDate}`, 10, 20);
+
+            // Adicionar análise de resultados
+            pdf.fromHTML(analysisResults, 10, 30);
+
+            // Adicionar o gráfico como imagem
+            const canvasImage = chartCanvas.toDataURL('image/png', 1.0);
+            pdf.addImage(canvasImage, 'PNG', 10, 80, 190, 90); // Ajustar posição e tamanho conforme necessário
+
+            // Salvar PDF
+            pdf.save('relatorio_aquaponia.pdf');
         }
 
         loadTemperatureData().then(readings => {
