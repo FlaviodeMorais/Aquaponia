@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-    <title>Projeto Integrador - Análise Avançada</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
         html {
             font-family: Arial, sans-serif;
@@ -21,22 +20,45 @@
             color: #2980b9;
         }
 
-        .controls {
-            margin-bottom: 20px;
-        }
-
-        .button {
-            padding: 10px 20px;
+        .buttonON, .buttonOFF {
+            display: inline-block;
+            width: 200px;
+            padding: 10px;
             font-size: 16px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 5px;
             margin: 5px;
             cursor: pointer;
         }
 
-        .export-button {
-            background-color: #3498db;
-            color: white;
+        .buttonON {
+            background-color: #4CAF50;
+        }
+
+        .buttonOFF {
+            background-color: #e74c3c;
+        }
+
+        .text {
+            font-size: 16px;
+            width: 180px;
+            height: 25px;
+            padding: 5px;
+            margin: 5px;
+            border: 2px solid #9b59b6;
+            border-radius: 5px;
+        }
+
+        .apply-button {
+            background-color: #C0C0C0;
+            color: #2c3e50;
+            font-size: 16px;
+            padding: 10px;
             border: none;
             border-radius: 5px;
+            cursor: pointer;
         }
 
         #chart-container {
@@ -45,107 +67,84 @@
             max-width: 1200px;
         }
 
-        .analysis {
-            margin: 20px auto;
+        canvas {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .analysis-results {
+            margin-top: 20px;
+            text-align: left;
             width: 90%;
             max-width: 800px;
-            text-align: left;
-            background-color: #f9f9f9;
-            border: 1px solid #ccc;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #F5F5F5;
+            border: 1px solid #CCC;
             padding: 10px;
             border-radius: 5px;
         }
 
-        canvas {
-            background-color: #f2f2f2;
+        .analysis-results p {
+            font-size: 16px;
+            color: #4DB6AC;
         }
     </style>
 </head>
-<body>
-    <h1>Projeto Integrador - Análise Avançada</h1>
-    <div class="controls">
-        <label>Início:</label>
-        <input type="date" id="startDate">
-        <label>Fim:</label>
-        <input type="date" id="endDate">
-        <button class="button" onclick="applyFilter()">Aplicar Filtro</button>
-        <button class="button export-button" onclick="exportData()">Exportar Relatório</button>
-    </div>
-    <div id="chart-container">
-        <canvas id="temperatureChart"></canvas>
-    </div>
-    <div class="analysis" id="analysisResults"></div>
 
+<body>
+    <div>
+        <h1>PROJETO INTEGRADOR - UNIVESP</h1>
+        <p>API Key:
+            <input type="password" id="ts-api-key" class="text" value="BY3NQR5RTECHYXQ5">
+            <input type="checkbox" onclick="toggleVisibility('ts-api-key')"> Exibir
+        </p>
+        <p>Channel ID:
+            <input type="password" id="ts-channel-id" class="text" value="2533413">
+            <input type="checkbox" onclick="toggleVisibility('ts-channel-id')"> Exibir
+        </p>
+        <button type="button" id="bomba-on" class="buttonON">Ligar Bomba</button>
+        <button type="button" id="bomba-off" class="buttonOFF">Desligar Bomba</button>
+        <button type="button" id="aqu-on" class="buttonON">Ligar Aquecedor</button>
+        <button type="button" id="aqu-off" class="buttonOFF">Desligar Aquecedor</button>
+        <div>
+            <label>Início:</label>
+            <input type="date" id="startDate" class="text">
+            <label>Fim:</label>
+            <input type="date" id="endDate" class="text">
+            <button type="button" class="apply-button" onclick="applyFilter()">Aplicar Filtro</button>
+        </div>
+        <h2>Temperatura:</h2>
+        <div id="chart-container">
+            <canvas id="temperatureChart"></canvas>
+        </div>
+        <div class="analysis-results" id="analysisResults"></div>
+    </div>
     <script>
-        async function fetchCSV(file) {
-            return new Promise((resolve, reject) => {
-                Papa.parse(file, {
-                    download: true,
-                    header: true,
-                    complete: results => resolve(results.data),
-                    error: error => reject(error)
-                });
-            });
+        function toggleVisibility(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
         }
 
         async function loadTemperatureData() {
-            try {
-                const data = await fetchCSV('feeds.csv');
-                return data.map(row => ({
-                    timestamp: new Date(row.created_at),
-                    temperature: parseFloat(row.field3)
-                })).filter(reading => !isNaN(reading.temperature));
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                return [];
-            }
-        }
+            const response = await fetch('feeds.csv');
+            const data = await response.text();
+            const rows = data.split('\n').slice(1);
 
-        function calculateStatistics(readings) {
-            const temperatures = readings.map(r => r.temperature);
-            const total = temperatures.reduce((sum, t) => sum + t, 0);
-            const mean = total / temperatures.length;
-
-            const sorted = [...temperatures].sort((a, b) => a - b);
-            const median =
-                temperatures.length % 2 === 0
-                    ? (sorted[temperatures.length / 2 - 1] + sorted[temperatures.length / 2]) / 2
-                    : sorted[Math.floor(temperatures.length / 2)];
-
-            const variance = temperatures.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / temperatures.length;
-            const stddev = Math.sqrt(variance);
-
-            return { mean, median, stddev };
-        }
-
-        function displayAnalysis(readings) {
-            const stats = calculateStatistics(readings);
-            const minTemp = 26, maxTemp = 28;
-
-            const totalTime = readings.length * 5 / 60; // Assuming 5-min intervals
-            let insideRange = 0, belowMin = 0, aboveMax = 0;
-
-            readings.forEach(reading => {
-                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
-                else if (reading.temperature < minTemp) belowMin++;
-                else aboveMax++;
-            });
-
-            const results = `
-                <p><strong>Média:</strong> ${stats.mean.toFixed(2)} °C</p>
-                <p><strong>Mediana:</strong> ${stats.median.toFixed(2)} °C</p>
-                <p><strong>Desvio Padrão:</strong> ${stats.stddev.toFixed(2)} °C</p>
-                <p><strong>Tempo no intervalo (${minTemp}°C a ${maxTemp}°C):</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Tempo abaixo de ${minTemp}°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
-                <p><strong>Tempo acima de ${maxTemp}°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
-            `;
-            document.getElementById('analysisResults').innerHTML = results;
+            return rows.map(row => {
+                const [created_at, , , , field3] = row.split(',');
+                return {
+                    timestamp: new Date(created_at),
+                    temperature: parseFloat(field3)
+                };
+            }).filter(reading => !isNaN(reading.temperature));
         }
 
         async function createChart(readings) {
             const ctx = document.getElementById('temperatureChart').getContext('2d');
-            const labels = readings.map(r => r.timestamp.toLocaleTimeString());
-            const temperatures = readings.map(r => r.temperature);
+            const labels = readings.map(reading => reading.timestamp.toLocaleTimeString());
+            const temperatures = readings.map(reading => reading.temperature);
 
             new Chart(ctx, {
                 type: 'line',
@@ -155,34 +154,71 @@
                         {
                             label: 'Temperatura',
                             data: temperatures,
-                            borderColor: '#4CAF50',
-                            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                            borderColor: '#4DB6AC',
+                            backgroundColor: 'rgba(77, 182, 172, 0.2)',
                             fill: true,
                             borderWidth: 2
-                        }
+                        },
+                        {
+                            label: 'Temperatura Mínima (26°C)',
+                            data: Array(labels.length).fill(26),
+                            borderColor: '#FF7043',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            fill: false,
+                        },
+                        {
+                            label: 'Temperatura Máxima (28°C)',
+                            data: Array(labels.length).fill(28),
+                            borderColor: '#7E57C2',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            fill: false,
+                        },
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Hora do Dia', color: '#333' },
+                        },
+                        y: {
+                            title: { display: true, text: 'Temperatura (°C)', color: '#333' },
+                            min: 24,
+                            max: 32,
+                            ticks: { stepSize: 1, color: '#333' },
+                            grid: { color: '#E0E0E0' },
+                        },
+                    },
                     plugins: {
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: true
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x'
-                            }
-                        }
-                    }
-                }
+                        legend: { labels: { color: '#333' } },
+                    },
+                },
             });
+        }
+
+        function analyzeTemperatureData(readings) {
+            const minTemp = 26, maxTemp = 28;
+            const totalTime = readings.length * 5 / 60; // Assume intervalos de 5 minutos
+            let insideRange = 0, belowMin = 0, aboveMax = 0;
+
+            readings.forEach(reading => {
+                if (reading.temperature >= minTemp && reading.temperature <= maxTemp) insideRange++;
+                else if (reading.temperature < minTemp) belowMin++;
+                else if (reading.temperature > maxTemp) aboveMax++;
+            });
+
+            const analysisHTML = `
+                <p><strong>Temperatura entre 26°C a 28°C:</strong> ${(insideRange * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Abaixo de 26°C:</strong> ${(belowMin * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Acima de 28°C:</strong> ${(aboveMax * 5 / 60).toFixed(2)} horas</p>
+                <p><strong>Total de Leituras:</strong> ${readings.length}</p>
+            `;
+            document.getElementById('analysisResults').innerHTML = analysisHTML;
         }
 
         async function applyFilter() {
@@ -190,31 +226,20 @@
             const endDate = new Date(document.getElementById('endDate').value);
             const data = await loadTemperatureData();
 
-            const filtered = data.filter(r => r.timestamp >= startDate && r.timestamp <= endDate);
+            const filteredData = data.filter(reading => reading.timestamp >= startDate && reading.timestamp <= endDate);
 
             document.getElementById('temperatureChart').remove();
             const canvas = document.createElement('canvas');
             canvas.id = 'temperatureChart';
             document.getElementById('chart-container').appendChild(canvas);
 
-            await createChart(filtered);
-            displayAnalysis(filtered);
-        }
-
-        function exportData() {
-            const csvContent = "data:text/csv;charset=utf-8,"
-                + document.getElementById('analysisResults').innerText.split('\n').join(',');
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "analysis_report.csv");
-            document.body.appendChild(link);
-            link.click();
+            createChart(filteredData);
+            analyzeTemperatureData(filteredData);
         }
 
         loadTemperatureData().then(readings => {
             createChart(readings);
-            displayAnalysis(readings);
+            analyzeTemperatureData(readings);
         });
     </script>
 </body>
