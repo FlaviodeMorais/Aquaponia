@@ -6,16 +6,18 @@
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <title>Projeto Integrador - Automação Aquaponia</title>
     <style>
         html {
-            font-family: Arial;
-            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
             text-align: center;
         }
 
         h1 {
-            font-size: 2.0rem;
+            font-size: 2rem;
             color: #2980b9;
         }
 
@@ -35,6 +37,7 @@
         .buttonON {
             background-color: #4CAF50;
         }
+
         .buttonOFF {
             background-color: #e74c3c;
         }
@@ -62,7 +65,6 @@
             margin-top: 10px;
         }
 
-        /* Centralizar o gráfico */
         #chart-container {
             display: flex;
             justify-content: center;
@@ -78,7 +80,6 @@
             height: auto;
         }
 
-        /* Estilos Responsivos */
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8rem;
@@ -153,7 +154,7 @@
         async function loadTemperatureData() {
             const response = await fetch('feeds.csv');
             const data = await response.text();
-            const rows = data.split('\n').slice(1);
+            const rows = data.split('\\n').slice(1);
             return rows.map(row => {
                 const [created_at, , , , field3] = row.split(',');
                 return {
@@ -205,6 +206,30 @@
                 },
                 options: {
                     responsive: true,
+                    plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw} °C`;
+                                }
+                            }
+                        }
+                    },
                     maintainAspectRatio: false,
                     scales: {
                         x: {
